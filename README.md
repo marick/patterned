@@ -51,10 +51,10 @@ bound on the right-hand side:
 user=> (classify-number 5)
 "odd number 5"
 user=> (classify-number 6)
-"some even number"```
+"some even number"
 ```
 
-A list containing `:in` will match any one of a number of literals. `:bind` can be used to find out which value matched. Here is a factorial that uses `:in` and `:when`:
+A list containing `:in` will match any one of a number of literals. `:bind` can be used to find out which value matched. Here is a factorial that uses both `:in` and `:when`:
 
 ```clojure
 (defpatterned factorial
