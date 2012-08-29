@@ -28,7 +28,7 @@ user=> (deep :b [1 [1 [3]]])
 "a match of :b and 3"
 ```
 
-Rest arguments are supported. Here's a typical recursive implementation
+Rest arguments are supported. Here's a typical recursive implementation of a sequence function:
 
 ```clojure
 (defpatterned count-sequence
