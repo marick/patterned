@@ -39,7 +39,13 @@
 
   (fact "guards"
     (match-one? '(:when (partial = 1)) 1) => truthy
-    (match-one? '(:when odd?) 2) => falsey))
+    (match-one? '(:when odd?) 2) => falsey)
+
+  (fact "choice of literals"
+    (match-one? '(:in [1 2]) 1) => truthy
+    (match-one? '(:in [1 2]) 2) => truthy
+    (match-one? '(:in [1 2]) 3) => falsey))
+    
 
 (future-fact "guards can use their lexical environment")
 ;;; Currently, I hacklishly use eval, so the following doesn't work.
@@ -60,7 +66,15 @@
     (match-map '[n m & rest] [1 2 3]) => {'n 1, 'm 2, 'rest '(3)}
     (match-map '[n & rest] [1 2]) => {'n 1, 'rest '(2)}
     (match-map '[n & rest] [1]) => {'n 1, 'rest '()}
-    (match-map '[& rest] [1]) => {'rest '(1)}))
+    (match-map '[& rest] [1]) => {'rest '(1)})
+
+  (fact "guards"
+    (match-map '(:when odd? :bind n) [1]) => {'n [1]}
+    (match-map '(:when odd?) [1]) => {})
+
+  (fact "choice of literals"
+    (match-map '(:in [1 2] :bind n) [1]) => {'n [1]}
+    (match-map '(:in [1 2]) [1]) => {}))
 
 (fact
   (symbols-in 1) => []
@@ -68,7 +82,13 @@
   (symbols-in '[1]) => []
   (symbols-in '[m n]) => '[m n]
   (symbols-in '[1 n 1]) => '[n]
-  (symbols-in '[1 n & rest]) => '[n rest])
+  (symbols-in '[1 n & rest]) => '[n rest]
+  (fact "guards"
+    (symbols-in '(:when odd? :bind n)) => ['n]
+    (symbols-in '(:when odd?)) => [])
+  (fact "choice of literals"
+    (symbols-in '(:or [1 2] :bind n)) => ['n]
+    (symbols-in '(:or [1 2])) => []))
 
 
 ;;; Code-builders

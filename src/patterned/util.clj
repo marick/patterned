@@ -22,6 +22,12 @@
 (def has-guard? (flat-has? :when))
 (def guard-arg (flat-arg :when))
 
+(def has-name? (flat-has? :bind))
+(def name-arg (flat-arg :bind))
+
+(def has-choice? (flat-has? :in))
+(def choice-arg (flat-arg :in))
+
 
 (defn partition-for-rest [pattern arg]
   (let [required-arg-count (- (count pattern) 2)]
@@ -30,24 +36,32 @@
       [(last pattern)
        (drop required-arg-count arg)]]))
 
+(defn truthy? [x]
+  (not (not x)))
 
-;;; Multimethods  
+;;; Multimethods
+
+(derive ::guard ::nameable)
+(derive ::choice ::nameable)
 
 (defn pattern-classification [pattern & rest]
   (cond (symbol? pattern)
-        :symbol
+        ::symbol
 
         (has-rest? pattern)
-        :nested-with-rest
+        ::nested-with-rest
 
         (has-guard? pattern)
-        :guard
+        ::guard
+
+        (has-choice? pattern)
+        ::choice
 
         (sequential? pattern)
-        :nested
+        ::nested
         
         :else
-        :literal))
+        ::literal))
 
 
 
@@ -55,34 +69,50 @@
 (defmulti match-map pattern-classification)
 (defmulti symbols-in pattern-classification)
 
-(defmethod match-one? :literal [pattern arg] (= pattern arg))
-(defmethod match-map :literal [pattern arg] {})
-(defmethod symbols-in :literal [pattern] [])
+(defmethod match-one? ::literal [pattern arg] (= pattern arg))
+(defmethod match-map ::literal [pattern arg] {})
+(defmethod symbols-in ::literal [pattern] [])
 
-(defmethod match-one? :symbol [pattern arg] true)
-(defmethod match-map :symbol [pattern arg] {pattern arg})
-(defmethod symbols-in :symbol [pattern] [pattern])
+(defmethod match-one? ::symbol [pattern arg] true)
+(defmethod match-map ::symbol [pattern arg] {pattern arg})
+(defmethod symbols-in ::symbol [pattern] [pattern])
 
-(defmethod match-one? :nested [pattern arg]
+(defmethod match-one? ::nested [pattern arg]
   (and (= (count pattern) (count arg))
-       (every? true? (map match-one? pattern arg))))
-(defmethod match-map :nested [pattern arg]
+       (every? truthy? (map match-one? pattern arg))))
+(defmethod match-map ::nested [pattern arg]
   (merge {}  ; for some reason (merge) returns nil
          (apply merge (map match-map pattern arg))))
-(defmethod symbols-in :nested [pattern] (mapcat symbols-in pattern))
+(defmethod symbols-in ::nested [pattern] (mapcat symbols-in pattern))
 
-(defmethod match-one? :nested-with-rest [pattern arg]
+(defmethod match-one? ::nested-with-rest [pattern arg]
   (let [ [[pattern-required-part arg-required-part] _] (partition-for-rest pattern arg)]
     (match-one? pattern-required-part arg-required-part)))
-(defmethod match-map :nested-with-rest [pattern arg]
+(defmethod match-map ::nested-with-rest [pattern arg]
   (let [ [[pattern-required-part arg-required-part]
           [rest-symbol rest-data]] (partition-for-rest pattern arg)]
     (assoc (match-map pattern-required-part arg-required-part) rest-symbol rest-data)))
-(defmethod symbols-in :nested-with-rest [pattern]
+(defmethod symbols-in ::nested-with-rest [pattern]
   (symbols-in (remove-rest pattern)))
 
-(defmethod match-one? :guard [pattern arg]
+(defmethod symbols-in ::nameable [pattern]
+  (if (has-name? pattern)
+    [(name-arg pattern)]
+    []))
+(defmethod match-map ::nameable [pattern arg]
+  (if (has-name? pattern)
+    {(name-arg pattern) arg}
+    {}))
+
+;; Using `eval` here is a hack.
+(defmethod match-one? ::guard [pattern arg]
   ( (eval (guard-arg pattern)) arg))
+  
+(defmethod match-one? ::choice [pattern arg]
+  (truthy? (some #{arg} (choice-arg pattern))))
+  
+
+
 
 ;;; Form construction
 

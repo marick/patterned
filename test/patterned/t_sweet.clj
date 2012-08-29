@@ -69,11 +69,12 @@
   (count-sequence [1 2 3]) => 3)
 
 (defpatterned factorial
-  [0] 1
-  [1] 1
+  [(:when (partial > 0) :bind n)] (oops! "Bad number" :n n)
+  [(:in [0 1])] 1
   [n] (* n (factorial (dec n))))
 
 (fact
+  (factorial -1) => {:reason "Bad number" :n -1}
   (factorial 0) => 1
   (factorial 1) => 1
   (factorial 5) => 120)
