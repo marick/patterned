@@ -1,0 +1,13 @@
+pom.xml
+*jar
+lib
+classes
+test/midje/scratch
+.cake
+*#*
+*~
+semantic.cache
+.lein-failures
+*.iml
+.idea/
+.lein-deps-sum
