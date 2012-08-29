@@ -39,7 +39,7 @@
 (defn truthy? [x]
   (not (not x)))
 
-;;; Multimethods
+;;; Multimethods
 
 (derive ::guard ::nameable)
 (derive ::choice ::nameable)
@@ -64,34 +64,53 @@
         ::literal))
 
 
-
+;;; match-one?
 (defmulti match-one? pattern-classification)
-(defmulti match-map pattern-classification)
-(defmulti symbols-in pattern-classification)
-
 (defmethod match-one? ::literal [pattern arg] (= pattern arg))
-(defmethod match-map ::literal [pattern arg] {})
-(defmethod symbols-in ::literal [pattern] [])
-
 (defmethod match-one? ::symbol [pattern arg] true)
-(defmethod match-map ::symbol [pattern arg] {pattern arg})
-(defmethod symbols-in ::symbol [pattern] [pattern])
 
 (defmethod match-one? ::nested [pattern arg]
   (and (= (count pattern) (count arg))
        (every? truthy? (map match-one? pattern arg))))
-(defmethod match-map ::nested [pattern arg]
-  (merge {}  ; for some reason (merge) returns nil
-         (apply merge (map match-map pattern arg))))
-(defmethod symbols-in ::nested [pattern] (mapcat symbols-in pattern))
 
 (defmethod match-one? ::nested-with-rest [pattern arg]
   (let [ [[pattern-required-part arg-required-part] _] (partition-for-rest pattern arg)]
     (match-one? pattern-required-part arg-required-part)))
+
+;; Using `eval` here is a hack.
+(defmethod match-one? ::guard [pattern arg]
+  ( (eval (guard-arg pattern)) arg))
+
+(defmethod match-one? ::choice [pattern arg]
+  (truthy? (some #{arg} (choice-arg pattern))))
+  
+
+;;; match-map
+(defmulti match-map pattern-classification)
+(defmethod match-map ::literal [pattern arg] {})
+(defmethod match-map ::symbol [pattern arg] {pattern arg})
+
+(defmethod match-map ::nested [pattern arg]
+  (merge {}  ; for some reason (merge) returns nil
+         (apply merge (map match-map pattern arg))))
+
 (defmethod match-map ::nested-with-rest [pattern arg]
   (let [ [[pattern-required-part arg-required-part]
           [rest-symbol rest-data]] (partition-for-rest pattern arg)]
     (assoc (match-map pattern-required-part arg-required-part) rest-symbol rest-data)))
+
+(defmethod match-map ::nameable [pattern arg]
+  (if (has-name? pattern)
+    {(name-arg pattern) arg}
+    {}))
+
+
+;;; symbols-in
+(defmulti symbols-in pattern-classification)
+(defmethod symbols-in ::literal [pattern] [])
+(defmethod symbols-in ::symbol [pattern] [pattern])
+(defmethod symbols-in ::nested [pattern] (mapcat symbols-in pattern))
+
 (defmethod symbols-in ::nested-with-rest [pattern]
   (symbols-in (remove-rest pattern)))
 
@@ -99,22 +118,10 @@
   (if (has-name? pattern)
     [(name-arg pattern)]
     []))
-(defmethod match-map ::nameable [pattern arg]
-  (if (has-name? pattern)
-    {(name-arg pattern) arg}
-    {}))
-
-;; Using `eval` here is a hack.
-(defmethod match-one? ::guard [pattern arg]
-  ( (eval (guard-arg pattern)) arg))
-  
-(defmethod match-one? ::choice [pattern arg]
-  (truthy? (some #{arg} (choice-arg pattern))))
-  
 
 
 
-;;; Form construction
+;;; Form construction
 
 (defn catchall-clause [args-symbol]
   `(throw (Error. (str "No pattern matched these arguments: "
