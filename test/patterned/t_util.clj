@@ -3,16 +3,12 @@
   (:use midje.sweet clojure.pprint))
   
 
+;;; Low level utilities
 
 (fact
-  (symbols-in '[1]) => []
-  (symbols-in '[m n]) => '[m n])
+  ((flat-arg :item) '(1 2 :item 3 4)) => 3)
 
-(fact
-  (let-steps '[1] 'match) => []
-  (let-steps '[n] 'match) => '[n (match 'n)]
-  (let-steps '[m n] 'match) => '[m (match 'm)
-                                 n (match 'n)])
+;;; Multimethods
 
 (fact
   (fact
@@ -39,7 +35,17 @@
       (match-one? pattern [1 2]) => truthy
       (match-one? pattern [1 2 3]) => truthy
       (match-one? pattern [1 2 3 4]) => truthy
-      (match-one? pattern [2 2 3 4]) => falsey)))
+      (match-one? pattern [2 2 3 4]) => falsey))
+
+  (fact "guards"
+    (match-one? '(:when (partial = 1)) 1) => truthy
+    (match-one? '(:when odd?) 2) => falsey))
+
+(future-fact "guards can use their lexical environment")
+;;; Currently, I hacklishly use eval, so the following doesn't work.
+;;    (let [a 1]
+;;      (match-one? '(:when (partial = a)) 1) => truthy)))
+  
   
 
 (fact
@@ -55,15 +61,23 @@
     (match-map '[n & rest] [1 2]) => {'n 1, 'rest '(2)}
     (match-map '[n & rest] [1]) => {'n 1, 'rest '()}
     (match-map '[& rest] [1]) => {'rest '(1)}))
-    
-  
-    
 
 (fact
-  (symbols-in 'n) => '[n]
   (symbols-in 1) => []
+  (symbols-in 'n) => '[n]
+  (symbols-in '[1]) => []
+  (symbols-in '[m n]) => '[m n]
   (symbols-in '[1 n 1]) => '[n]
   (symbols-in '[1 n & rest]) => '[n rest])
+
+
+;;; Code-builders
+
+(fact
+  (let-steps '[1] 'match) => []
+  (let-steps '[n] 'match) => '[n (match 'n)]
+  (let-steps '[m n] 'match) => '[m (match 'm)
+                                 n (match 'n)])
 
 (fact
   (pattern-match [1] [1]) => {}
