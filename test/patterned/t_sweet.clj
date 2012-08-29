@@ -88,3 +88,23 @@
 (fact
   (factorial 1) => 1
   (factorial 5) => 120)
+
+(defpatterned deep
+  [:a [1]]          "a simple match"
+  [s [1 [1 [n]]]]   (str "a match of " s " and " n))
+
+(fact
+  (deep :a [1]) => "a simple match"
+  (deep :b [1 [1 [3]]]) => "a match of :b and 3")
+
+(defpatterned resty
+  [:a :b & rest] (str ":a and :b with " (pr-str rest))
+  [:a & rest] (str ":a with " (pr-str rest))
+  [& catchall] catchall)
+
+
+(fact
+  (resty :a :b) => ":a and :b with ()"
+  (resty :a :b :c) => ":a and :b with (:c)"
+  (resty :a :c) => ":a with (:c)"
+  (resty :b) => '(:b))
