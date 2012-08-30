@@ -1,10 +1,15 @@
 (ns patterned.sweet
   (:use patterned.util))
 
+(defmacro patterned [& pairs]
+  (tagged-body 'fn pairs))
+
 (defmacro defpatterned [name & pairs]
-  (let [args-symbol (gensym "args-")
-        match-symbol (gensym "matching-pattern-")]
-    `(defn ~name [& ~args-symbol]
-       ~(reduce (patterned-body args-symbol match-symbol)
-                (catchall-clause args-symbol)
-                (reverse (partition 2 pairs))))))
+  `(def ~name (patterned ~@pairs)))
+
+(defmacro letpatterned [patterns & body]
+  (let [expanded (map (fn [ [name & rest] ]
+                        (tagged-body name rest))
+                      patterns)]
+    `(letfn [~@expanded] ~@body)))
+                     

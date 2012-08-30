@@ -108,3 +108,29 @@
   (resty :a :b :c) => ":a and :b with (:c)"
   (resty :a :c) => ":a with (:c)"
   (resty :b) => '(:b))
+
+
+(let [f (patterned
+             [1] "one"
+             [n] "other")]
+  (fact
+    (f 1) => "one"
+    (f 2) => "other"))
+
+
+(letpatterned [(some-name [1] "one" [n] "two")]
+              (fact (some-name 1) => "one"))
+
+
+
+(letpatterned
+ [(f1 [0] 0 [n] (f2 (dec n)))
+  (f2 [0] 1 [n] (f1 (dec n)))]
+ (fact
+   (f1 0) => 0
+   (f2 0) => 1
+   (f1 1) => 1
+   (f2 1) => 0
+   (f1 2) => 0))
+ 
+ 

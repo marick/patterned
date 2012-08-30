@@ -144,3 +144,16 @@
     `(if-let [~match-symbol (pattern-match '~pattern ~args-symbol)]
        (let [~@(let-steps pattern match-symbol)] ~action)
        ~so-far)))
+
+(defn full-body [args-symbol pairs]
+  (let [match-symbol (gensym "matching-pattern-")]
+    (reduce (patterned-body args-symbol match-symbol)
+            (catchall-clause args-symbol)
+            (reverse (partition 2 pairs)))))
+
+(defn tagged-body [tag pairs]
+  (let [args-symbol (gensym "args-")]
+    `(~tag [& ~args-symbol]
+       ~(full-body args-symbol pairs))))
+  
+
