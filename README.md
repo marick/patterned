@@ -1,5 +1,7 @@
 patterned
 =========
+Available via [clojars](http://clojars.org/search?q=patterned)   
+Leiningen: [patterned "0.2.0"]
 
 Provides `defpatterned` to define Clojure functions in a
 somewhat Haskell-like way. 
