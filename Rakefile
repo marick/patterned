@@ -34,7 +34,7 @@ task :jar_name do
 end
 
 desc "upload to clojars"
-task :upload do
+task :upload => :fresh do
   doit("lein pom")
   if File.exist?("patterned.jar")
     doit("mv patterned.jar #{jar_name} ")
