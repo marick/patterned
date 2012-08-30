@@ -65,6 +65,27 @@ A list containing `:in` will match any one of a number of literals. `:bind` can 
 
 ---------------------
 
+The `patterned` macro is the pattern-matching equivalent of
+`fn`:
+
+```clojure
+( (patterned
+    [1] "one"
+    [n] "other")
+  8888)
+```
+
+The `letpatterned` macro is the pattern-matching equivalent of `letfn`:
+
+```clojure
+(letpatterned
+   [(f1 [0] 0 [n] (f2 (dec n)))
+    (f2 [0] 1 [n] (f1 (dec n)))]
+ (f2 88))
+```
+
+---------------------
+
 This library is in support of *[Functional Programming for
 the Object-Oriented
 Programmer](https://leanpub.com/fp-oo)*. Feel free to use it
